@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from app.config import Config
+from app.loans import models as loan_models  # noqa: F401
 
 
 engine = AsyncEngine(

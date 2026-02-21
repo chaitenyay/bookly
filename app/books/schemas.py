@@ -37,3 +37,12 @@ class Book(BookBaseModel):
 
     class Config:
         from_attributes = True
+
+
+class BookForLoan(BaseModel):
+    uid: uuid.UUID
+    title: str
+    isbn: str
+
+    class Config:
+        from_attributes = True

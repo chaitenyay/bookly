@@ -37,3 +37,13 @@ class Member(MemberBase):
 
     class Config:
         from_attributes = True
+
+
+class MemberForLoan(BaseModel):
+    uid: uuid.UUID
+    first_name: str
+    last_name: str
+    email: EmailStr
+
+    class Config:
+        from_attributes = True

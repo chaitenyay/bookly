@@ -4,6 +4,7 @@ from app.auth.routes import auth_router
 from app.author.routes import author_router
 from app.members.routes import member_router
 from app.publisher.routes import publisher_router
+from app.loans.routes import loan_router
 from contextlib import asynccontextmanager
 from app.db.main import init_db
 from app.config import Config
@@ -37,3 +38,4 @@ app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["Auth"])  #
 app.include_router(author_router, prefix=f"/api/{version}/authors", tags=["Authors"])  # Include the author router to handle author-related endpoints
 app.include_router(member_router, prefix=f"/api/{version}/members", tags=["Members"])  # Include the member router to handle member-related endpoints
 app.include_router(publisher_router, prefix=f"/api/{version}/publishers", tags=["Publishers"])  # Include the publisher router to handle publisher-related endpoints
+app.include_router(loan_router, prefix=f"/api/{version}/loans", tags=["Loans"])  # Include the loan router to handle loan-related endpoints
