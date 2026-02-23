@@ -50,7 +50,11 @@ class LoanService:
         loan.reissued_at = reissue_data.reissued_at
 
         session.add(loan)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Loan could not be reissued due to a data conflict")
         await session.refresh(loan)
         return loan
 
@@ -64,6 +68,10 @@ class LoanService:
         loan.fine_grace_amount = return_data.fine_grace_amount
 
         session.add(loan)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Loan could not be returned due to a data conflict")
         await session.refresh(loan)
         return loan

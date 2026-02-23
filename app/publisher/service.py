@@ -55,5 +55,9 @@ class PublisherService:
             return False
 
         await session.delete(publisher)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Publisher cannot be deleted because it is referenced by other records")
         return True

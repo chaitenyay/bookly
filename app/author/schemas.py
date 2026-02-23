@@ -1,7 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 import uuid
+
 
 class AuthorBase(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=50)

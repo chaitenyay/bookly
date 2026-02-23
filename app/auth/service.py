@@ -1,11 +1,11 @@
 from typing import Optional
 from sqlmodel import Session, select
-from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 from app.auth.models import User
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.auth.schemas import UserCreateModel
 from app.auth.utils import generate_password_hash
+from sqlalchemy.exc import IntegrityError
 
 
 
@@ -24,7 +24,11 @@ class UserService:
         new_user = User(**user_data.model_dump())
         new_user.password_hash = generate_password_hash(user_data.password)
         session.add(new_user)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("User with this username or email already exists")
         await session.refresh(new_user)
         return new_user 
     

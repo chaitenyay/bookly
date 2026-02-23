@@ -2,6 +2,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.books.schemas import BookCreateModel, BookUpdateModel
 from app.books.models import Book
 from sqlmodel import select, desc
+from sqlalchemy.exc import IntegrityError
 
 
 class BookService:
@@ -24,11 +25,15 @@ class BookService:
     
     async def create_book(self, book_data: BookCreateModel, session: AsyncSession):
         # return self.book_repository.create_book(book_data, session)
-            new_book = Book(**book_data.model_dump())
-            session.add(new_book)
+        new_book = Book(**book_data.model_dump())
+        session.add(new_book)
+        try:
             await session.commit()
-            await session.refresh(new_book)
-            return new_book
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Book data conflicts with existing records")
+        await session.refresh(new_book)
+        return new_book
 
     async def update_book(self, book_uid: str, book_data: BookUpdateModel, session: AsyncSession):
         # return self.book_repository.update_book(book_id, book_data, session)
@@ -38,7 +43,11 @@ class BookService:
         for key, value in book_data.model_dump(exclude_unset=True).items():
             setattr(book, key, value)
         session.add(book)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Book data conflicts with existing records")
         await session.refresh(book)
         return book
     
@@ -48,5 +57,9 @@ class BookService:
         if not book:
             return False
         await session.delete(book)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Book cannot be deleted because it is referenced by other records")
         return True

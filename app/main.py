@@ -1,4 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.books.routes import book_router
 from app.auth.routes import auth_router
 from app.author.routes import author_router
@@ -6,6 +10,7 @@ from app.members.routes import member_router
 from app.publisher.routes import publisher_router
 from app.loans.routes import loan_router
 from contextlib import asynccontextmanager
+from app.common.error_repsonses import _error_response
 from app.db.main import init_db
 from app.config import Config
 
@@ -26,6 +31,73 @@ app = FastAPI(
     version=version,
     lifespan=lifespan
 ) 
+
+crud_prefixes = (
+    f"/api/{version}/auth",
+    f"/api/{version}/books",
+    f"/api/{version}/authors",
+    f"/api/{version}/members",
+    f"/api/{version}/publishers",
+    f"/api/{version}/loans",
+)
+
+
+def _is_crud_request(request: Request) -> bool:
+    return request.url.path.startswith(crud_prefixes)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    if not _is_crud_request(request):
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors()},
+        )
+
+    validation_errors = exc.errors()
+    first_error = validation_errors[0] if validation_errors else {}
+    raw_error_code = str(first_error.get("type", "validation_error")).upper().replace(".", "_")
+    error_code = "MISSING_DATA" if raw_error_code == "MISSING" else raw_error_code
+    details = "; ".join(
+        f"{'.'.join(map(str, err.get('loc', [])))}: {err.get('msg', 'Invalid value')}"
+        for err in validation_errors
+    )
+    return _error_response(
+        request=request,
+        status_code=422,
+        error_code=error_code,
+        message="Request validation failed",
+        details=details or "Invalid request input",
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if not _is_crud_request(request):
+        detail = exc.detail if exc.detail else "HTTP error"
+        return JSONResponse(status_code=exc.status_code, content={"detail": detail}, headers=exc.headers)
+
+    detail_text = exc.detail if isinstance(exc.detail, str) else "HTTP error"
+    return _error_response(
+        request=request,
+        status_code=exc.status_code,
+        error_code=f"HTTP_{exc.status_code}",
+        message="Request failed",
+        details=detail_text,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    if not _is_crud_request(request):
+        return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+
+    return _error_response(
+        request=request,
+        status_code=500,
+        error_code="INTERNAL_SERVER_ERROR",
+        message="Unexpected server error",
+        details="An internal server error occurred.",
+    )
 
 
 # @app.get("/")

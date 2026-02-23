@@ -55,5 +55,9 @@ class MemberService:
             return False
 
         await session.delete(member)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError("Member cannot be deleted because it is referenced by other records")
         return True
