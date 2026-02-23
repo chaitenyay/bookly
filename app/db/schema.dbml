@@ -1,0 +1,115 @@
+Project bookly {
+  database_type: "PostgreSQL"
+  Note: "Generated from SQLModel models in app/*/models.py"
+}
+
+Table users {
+  uid uuid [pk, not null]
+  username varchar [not null, unique]
+  email varchar [not null, unique]
+  password_hash varchar [not null]
+  first_name varchar
+  last_name varchar
+  is_verified boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    uid [name: "ix_users_uid"]
+    username [name: "ix_users_username"]
+    email [name: "ix_users_email"]
+  }
+}
+
+Table authors {
+  uid uuid [pk, not null]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  email varchar [not null, unique]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    uid [name: "ix_authors_uid"]
+    email [name: "ix_authors_email"]
+  }
+}
+
+Table publishers {
+  uid uuid [pk, not null]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  email varchar [not null, unique]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    uid [name: "ix_publishers_uid"]
+    email [name: "ix_publishers_email"]
+  }
+}
+
+Table members {
+  uid uuid [pk, not null]
+  first_name varchar(50)
+  last_name varchar(50)
+  email varchar(255) [not null, unique]
+  phone varchar(20)
+  address varchar(255)
+  city varchar(100)
+  join_date timestamptz [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    uid [name: "ix_members_uid"]
+    email [name: "ix_members_email"]
+  }
+}
+
+Table books {
+  uid uuid [pk, not null]
+  title varchar(255) [not null]
+  author_uid uuid
+  publisher_uid uuid
+  isbn varchar(20) [not null]
+  description text
+  published_date timestamptz
+  pages int
+  language varchar(50)
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    uid [name: "ix_books_uid"]
+  }
+}
+
+Table loans {
+  uid uuid [pk, not null]
+  book_uid uuid [not null]
+  member_uid uuid [not null]
+  borrowed_at timestamptz [not null]
+  due_date timestamptz [not null]
+  reissued_at timestamptz
+  returned_at timestamptz
+  fine_amount numeric(10,2) [not null, default: 0.00]
+  fine_grace_amount numeric(10,2) [not null, default: 0.00]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    uid [name: "ix_loans_uid"]
+    book_uid [name: "ix_loans_book_uid"]
+    member_uid [name: "ix_loans_member_uid"]
+    borrowed_at [name: "ix_loans_borrowed_at"]
+    (book_uid, member_uid) [name: "uq_loans_book_member", unique]
+  }
+}
+
+Ref: books.author_uid > authors.uid
+Ref: books.publisher_uid > publishers.uid
+Ref: loans.book_uid > books.uid
+Ref: loans.member_uid > members.uid

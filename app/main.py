@@ -1,3 +1,6 @@
+import uuid
+from time import perf_counter
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -11,6 +14,7 @@ from app.publisher.routes import publisher_router
 from app.loans.routes import loan_router
 from contextlib import asynccontextmanager
 from app.common.error_repsonses import _error_response
+from app.common.logging import clear_request_id, set_request_id, setup_logging
 from app.db.main import init_db
 from app.config import Config
 
@@ -31,6 +35,8 @@ app = FastAPI(
     version=version,
     lifespan=lifespan
 ) 
+logger = setup_logging()
+
 
 crud_prefixes = (
     f"/api/{version}/auth",
@@ -44,6 +50,48 @@ crud_prefixes = (
 
 def _is_crud_request(request: Request) -> bool:
     return request.url.path.startswith(crud_prefixes)
+
+
+@app.middleware("http")
+async def request_context_logging_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    set_request_id(request_id)
+
+    start_time = perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_ms = round((perf_counter() - start_time) * 1000, 2)
+        logger.exception(
+            "Request failed",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": 500,
+                "duration_ms": duration_ms,
+            },
+        )
+        clear_request_id()
+        raise
+
+    response.headers["X-Request-ID"] = request_id
+    duration_ms = round((perf_counter() - start_time) * 1000, 2)
+    log_payload = {
+        "method": request.method,
+        "path": request.url.path,
+        "status_code": response.status_code,
+        "duration_ms": duration_ms,
+    }
+    if response.status_code >= 400:
+        log_payload["error_code"] = getattr(request.state, "error_code", None)
+        log_payload["error_message"] = getattr(request.state, "error_message", None)
+        log_payload["error_details"] = getattr(request.state, "error_details", None)
+        logger.error("Request failed", extra=log_payload)
+    else:
+        logger.info("Request completed", extra=log_payload)
+    clear_request_id()
+    return response
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
