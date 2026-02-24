@@ -1,0 +1,90 @@
+@startuml
+title Bookly Class Schema
+
+hide methods
+skinparam classAttributeIconSize 0
+
+class User {
+  +uid: UUID
+  +username: str <<unique>>
+  +email: str <<unique>>
+  +password_hash: str
+  +first_name: str?
+  +last_name: str?
+  +is_verified: bool
+  +is_active: bool
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+class Author {
+  +uid: UUID
+  +first_name: str
+  +last_name: str
+  +email: str <<unique>>
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+class Publisher {
+  +uid: UUID
+  +first_name: str
+  +last_name: str
+  +email: str <<unique>>
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+class Member {
+  +uid: UUID
+  +first_name: str
+  +last_name: str
+  +email: str <<unique>>
+  +phone: str?
+  +address: str?
+  +city: str?
+  +join_date: datetime
+  +is_active: bool
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+class Book {
+  +uid: UUID
+  +title: str
+  +author_uid: UUID?
+  +publisher_uid: UUID?
+  +isbn: str <<unique>>
+  +description: str?
+  +published_date: datetime?
+  +pages: int?
+  +language: str?
+  +available_copies: int
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+class Loan {
+  +uid: UUID
+  +book_uid: UUID
+  +member_uid: UUID
+  +borrowed_at: datetime
+  +due_date: datetime
+  +reissued_at: datetime?
+  +returned_at: datetime?
+  +fine_amount: decimal(10,2)
+  +fine_grace_amount: decimal(10,2)
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+Author "1" -- "0..*" Book : author_uid
+Publisher "1" -- "0..*" Book : publisher_uid
+Book "1" -- "0..*" Loan : book_uid
+Member "1" -- "0..*" Loan : member_uid
+
+note right of Book
+  ISBN is unique
+end note
+
+@enduml

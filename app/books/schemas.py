@@ -14,6 +14,7 @@ class BookBaseModel(BaseModel):
     published_date: Optional[datetime] = None
     pages: Optional[int] = Field(None, gt=0)
     language: Optional[str] = Field(None, max_length=50)
+    available_copies: int = Field(0, ge=0)
 
 class BookCreateModel(BookBaseModel):
     pass
@@ -27,6 +28,7 @@ class BookUpdateModel(BaseModel):
     published_date: Optional[datetime] = None
     pages: Optional[int] = Field(None, gt=0)
     language: Optional[str] = Field(None, max_length=50)
+    available_copies: Optional[int] = Field(None, ge=0)
 
 class Book(BookBaseModel):
     uid: uuid.UUID
@@ -43,6 +45,7 @@ class BookForLoan(BaseModel):
     uid: uuid.UUID
     title: str
     isbn: str
+    available_copies: int
 
     class Config:
         from_attributes = True

@@ -3,6 +3,8 @@ from app.books.schemas import BookCreateModel, BookUpdateModel
 from app.books.models import Book
 from sqlmodel import select, desc
 from sqlalchemy.exc import IntegrityError
+from typing import Optional
+import uuid
 
 
 class BookService:
@@ -10,9 +12,24 @@ class BookService:
     # def __init__(self, book_repository):
     #     self.book_repository = book_repository
 
-    async def get_all_books(self, session: AsyncSession):
+    async def get_all_books(
+        self,
+        session: AsyncSession,
+        title: Optional[str] = None,
+        author_uid: Optional[uuid.UUID] = None,
+        publisher_uid: Optional[uuid.UUID] = None,
+        isbn: Optional[str] = None,
+    ):
         # return self.book_repository.get_all_books(session)
         statement = select(Book).order_by(desc(Book.created_at))
+        if title:
+            statement = statement.where(Book.title.ilike(f"%{title}%"))
+        if author_uid:
+            statement = statement.where(Book.author_uid == author_uid)
+        if publisher_uid:
+            statement = statement.where(Book.publisher_uid == publisher_uid)
+        if isbn:
+            statement = statement.where(Book.isbn == isbn)
         result = await session.exec(statement)
         return result.all()
 
@@ -25,6 +42,11 @@ class BookService:
     
     async def create_book(self, book_data: BookCreateModel, session: AsyncSession):
         # return self.book_repository.create_book(book_data, session)
+        existing_book_stmt = select(Book).where(Book.isbn == book_data.isbn)
+        existing_book_result = await session.exec(existing_book_stmt)
+        if existing_book_result.first():
+            raise ValueError(f"Book with ISBN '{book_data.isbn}' already exists")
+
         new_book = Book(**book_data.model_dump())
         session.add(new_book)
         try:

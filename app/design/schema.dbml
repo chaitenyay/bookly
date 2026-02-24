@@ -79,11 +79,13 @@ Table books {
   published_date timestamptz
   pages int
   language varchar(50)
+  available_copies int [not null, default: 0]
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
   indexes {
     uid [name: "ix_books_uid"]
+    isbn [name: "uq_books_isbn", unique]
   }
 }
 
@@ -105,7 +107,6 @@ Table loans {
     book_uid [name: "ix_loans_book_uid"]
     member_uid [name: "ix_loans_member_uid"]
     borrowed_at [name: "ix_loans_borrowed_at"]
-    (book_uid, member_uid) [name: "uq_loans_book_member", unique]
   }
 }
 

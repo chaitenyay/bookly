@@ -4,7 +4,7 @@ from typing import Optional
 import uuid
 
 import sqlalchemy.dialects.postgresql as pg
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint, text
+from sqlalchemy import Column, ForeignKey, Index, text
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.books.models import Book
@@ -14,7 +14,6 @@ from app.members.models import Member
 class Loan(SQLModel, table=True):
     __tablename__ = "loans"
     __table_args__ = (
-        UniqueConstraint("book_uid", "member_uid", name="uq_loans_book_member"),
         Index("ix_loans_book_uid", "book_uid"),
         Index("ix_loans_member_uid", "member_uid"),
         Index("ix_loans_borrowed_at", "borrowed_at"),

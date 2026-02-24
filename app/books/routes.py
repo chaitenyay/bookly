@@ -1,6 +1,6 @@
-from fastapi import APIRouter, status, Depends, Request
+from fastapi import APIRouter, status, Depends, Request, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import List
+from typing import List, Optional
 import uuid
 from app.db.main import get_session
 from app.books.service import BookService
@@ -17,8 +17,21 @@ access_token_bearer = AccessTokenBearer()
 
 # Define API endpoints for book management
 @book_router.get("/", response_model=APIResponse[List[Book]])
-async def read_books(session: AsyncSession = Depends(get_session),token_details: dict = Depends(access_token_bearer)):
-    books = await book_service.get_all_books(session)
+async def read_books(
+    title: Optional[str] = Query(None, min_length=1, max_length=255),
+    author_uid: Optional[uuid.UUID] = None,
+    publisher_uid: Optional[uuid.UUID] = None,
+    isbn: Optional[str] = Query(None, min_length=10, max_length=20),
+    session: AsyncSession = Depends(get_session),
+    token_details: dict = Depends(access_token_bearer),
+):
+    books = await book_service.get_all_books(
+        session=session,
+        title=title,
+        author_uid=author_uid,
+        publisher_uid=publisher_uid,
+        isbn=isbn,
+    )
     return APIResponse(
         status="success",
         statusCode=status.HTTP_200_OK,

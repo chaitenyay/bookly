@@ -1,0 +1,53 @@
+@startuml
+title Bookly High-Level Design (HLD)
+left to right direction
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Client App\n(Web/Mobile)" as Client
+
+node "Bookly Runtime" {
+  component "FastAPI App\n(app/main.py)" as API
+  component "Auth Layer\nJWT + AccessTokenBearer" as Auth
+  component "Request Middleware\nRequest ID + Logging +\nException Handling" as Middleware
+  component "Books Module\nroutes + service + model" as Books
+  component "Authors Module\nroutes + service + model" as Authors
+  component "Publishers Module\nroutes + service + model" as Publishers
+  component "Members Module\nroutes + service + model" as Members
+  component "Loans Module\nroutes + service + model" as Loans
+}
+
+database "PostgreSQL\n(bookly)" as DB
+component "Alembic Migrations\n(migrations/)" as Migrations
+component "Runtime Validator\nscripts/validate_runtime.sh" as Validator
+
+Client --> API : HTTPS REST (/api/v1/*)
+API --> Middleware : incoming requests
+Middleware --> Auth : protected endpoints
+
+API --> Books
+API --> Authors
+API --> Publishers
+API --> Members
+API --> Loans
+
+Books --> DB : CRUD books\n(unique ISBN)
+Authors --> DB : CRUD authors
+Publishers --> DB : CRUD publishers
+Members --> DB : CRUD members
+Loans --> DB : issue/return/reissue
+Auth --> DB : users/credentials
+
+Migrations --> DB : schema changes
+Validator --> API : health/openapi checks
+Validator --> DB : startup + connectivity
+
+note right of DB
+  Core entities:
+  users, authors, publishers,
+  members, books, loans
+end note
+
+@enduml

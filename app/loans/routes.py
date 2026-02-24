@@ -19,10 +19,16 @@ access_token_bearer = AccessTokenBearer()
 
 @loan_router.get("/", response_model=APIResponse[List[Loan]])
 async def read_loans(
+    book_uid: uuid.UUID | None = None,
+    member_uid: uuid.UUID | None = None,
     session: AsyncSession = Depends(get_session),
     token_details: dict = Depends(access_token_bearer),
 ):
-    loans = await loan_service.get_all_loans(session)
+    loans = await loan_service.get_all_loans(
+        session=session,
+        book_uid=book_uid,
+        member_uid=member_uid,
+    )
     return APIResponse(
         status="success",
         statusCode=status.HTTP_200_OK,
