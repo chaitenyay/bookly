@@ -56,7 +56,55 @@ docker compose down
 - OpenAPI JSON: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-## 4. Design Documents
+## 4. How To Use API
+
+Use the APIs in this sequence.
+
+### Step 1: Signup
+Create a user account.
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/signup" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "johndoe",
+    "email": "john@example.com",
+    "password": "Pass@123",
+    "first_name": "John",
+    "last_name": "Doe"
+  }'
+```
+
+### Step 2: Signin
+Login with registered credentials to get `access_token`.
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/signin" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "Pass@123"
+  }'
+```
+
+Save `data.access_token` from the signin response.
+
+### Step 3: Call Protected APIs
+Pass token in `Authorization` header as Bearer token.
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/books/" \
+  -H "Authorization: Bearer <access_token>"
+```
+
+### Optional: Refresh Access Token
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/refresh" \
+  -H "Authorization: Bearer <refresh_token>"
+```
+
+## 5. Design Documents
 
 All design assets are in `app/design`.
 
@@ -66,7 +114,7 @@ All design assets are in `app/design`.
 - DB Schema (DBML): [`app/design/schema.dbml`](app/design/schema.dbml)
 - Generated Diagram (PNG): [`app/design/bookly.png`](app/design/bookly.png)
 
-## 5. Runtime Validation
+## 6. Runtime Validation
 
 Run the validation script:
 
